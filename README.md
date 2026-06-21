@@ -92,19 +92,27 @@ teacher model, a **teacher-student distillation** experiment was run using QLoRA
 | **Eval set** | 200 matches, held out and **never seen during training** |
 | **Hardware** | Google Colab Pro, NVIDIA A100 (40GB) |
 | **Trainable parameters** | 13.6M / 8.04B (0.17% of total — LoRA adapter only) |
- 
+
+<!--After filtering for token length (≤2800 estimated tokens, to fit
+training context) and JSON parse success, 402 usable examples remained for
+fine-tuning.
+-->
+
 **Eval set isolation logic:** before any training data was generated, 200 match
 IDs were randomly sampled (fixed seed) and excluded from the teacher-generation
 pool entirely. This guarantees the post-fine-tuning evaluation measures
 generalization, not memorization — the model is being tested on matches it has
 never been trained or distilled on.
- 
-**Training data selection logic:** of the dataset's full match pool (eval IDs
-excluded), 402 matches were sent to the teacher model to generate target
-summaries. After filtering for token length (≤2800 estimated tokens, to fit
-training context) and JSON parse success, 402 usable examples remained for
-fine-tuning.
- 
+
+**Training data selection logic:** training data selection was stratified, not
+random, to avoid a model that only learns to summarize routine 1-0 wins. From
+the remaining match pool (eval IDs excluded), matches were bucketed by **score
+margin** (close / comfortable / blowout) and **red card presence** (yes / no),
+then sampled across all six resulting strata — 402 matches in total — so the
+training data reflects a representative spread of match narratives rather than
+just the most common pattern in the dataset. These 402 matches were sent to the teacher model to generate target summaries.
+
+
 ### Results: Baseline LLaMA-3-8B vs QLoRA Fine-Tuned, on the same 200-match eval set
  
 | Metric | Baseline (pre-QLoRA) | Fine-tuned (post-QLoRA) | Delta |
@@ -117,11 +125,12 @@ fine-tuning.
 | Red card recall | 0.982 | 0.994 | ≈ unchanged |
 | Guardrail PASS rate | 58.0% | **95.3%** | **+37.3pp** |
 | Guardrail FAIL rate (hallucinations) | 8.5% | **4.7%** | **-3.8pp** |
- 
+
+<!-- 
 > Note: the post-QLoRA eval successfully parsed valid JSON for 192/200 matches
 > (8 generations failed JSON parsing — a known small-model failure mode). Metrics
 > above are computed on the 192 that parsed.
- 
+-->
 **What this shows:**
  
 - **ROUGE and BERTScore both moved together** — the fine-tuned model didn't just
@@ -147,7 +156,8 @@ few-shot examples: 3 hand-vetted, fact-consistent outputs from the QLoRA trainin
 data (covering a high-scoring match, a low-scoring draw, and a match with a red
 card) are embedded directly in the system prompt sent to the base
 `llama-3.1-8b-instant` model via Groq's free, low-latency API.
- 
+
+<!-- 
 This trades a few points of the fine-tuned model's quality gain for:
 - Zero GPU hosting cost
 - Sub-second response latency
@@ -161,7 +171,7 @@ events appear in the narrative prose but aren't always echoed in the structured
 checks the full narrative text, not just `key_moments`), but it's a refinement
 noted for a v2 — likely solvable with a stricter structured-output schema or an
 explicit guardrail rule.
- 
+-->
 ---
  
 ## Tech Stack
