@@ -13,7 +13,7 @@ pinned: false
 End-to-end sports commentary pipeline combining NLP classification and LLM-powered
 summarization to automate match highlight generation for sports streaming platforms.
  
-**[ Try the live app → PASTE_YOUR_HUGGINGFACE_SPACE_LINK_HERE ]**
+**https://huggingface.co/spaces/mansoorsk/MatchLens_AI**
  
 ---
  
